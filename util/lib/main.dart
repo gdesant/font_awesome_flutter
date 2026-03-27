@@ -45,14 +45,7 @@ class IconMetadata {
   final List<String> styles;
   final List<String> aliases;
 
-  IconMetadata(
-    this.name,
-    this.label,
-    this.unicode,
-    this.searchTerms,
-    this.styles,
-    this.aliases,
-  );
+  IconMetadata(this.name, this.label, this.unicode, this.searchTerms, this.styles, this.aliases);
 }
 
 final AnsiPen red = AnsiPen()..xterm(009);
@@ -104,27 +97,11 @@ void main(List<String> rawArgs) async {
     print(blue('No icons.json found, updating free icons'));
     const repositoryName = 'FortAwesome/Font-Awesome';
     final defaultBranch = await getRepositoryDefaultBranch(repositoryName);
-    print(
-      blue(
-        'Choosing branch "$defaultBranch" of repository https://github.com/$repositoryName',
-      ),
-    );
-    await download(
-      'https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/metadata/icons.json',
-      File('lib/fonts/icons.json'),
-    );
-    await download(
-      'https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/otfs/Font Awesome 7 Brands-Regular-400.otf',
-      File('lib/fonts/Font-Awesome-7-Brands-Regular-400.otf'),
-    );
-    await download(
-      'https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/otfs/Font Awesome 7 Free-Regular-400.otf',
-      File('lib/fonts/Font-Awesome-7-Free-Regular-400.otf'),
-    );
-    await download(
-      'https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/otfs/Font Awesome 7 Free-Solid-900.otf',
-      File('lib/fonts/Font-Awesome-7-Free-Solid-900.otf'),
-    );
+    print(blue('Choosing branch "$defaultBranch" of repository https://github.com/$repositoryName'));
+    await download('https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/metadata/icons.json', File('lib/fonts/icons.json'));
+    await download('https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/otfs/Font Awesome 7 Brands-Regular-400.otf', File('lib/fonts/Font-Awesome-7-Brands-Regular-400.otf'));
+    await download('https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/otfs/Font Awesome 7 Free-Regular-400.otf', File('lib/fonts/Font-Awesome-7-Free-Regular-400.otf'));
+    await download('https://raw.githubusercontent.com/FortAwesome/Font-Awesome/$defaultBranch/otfs/Font Awesome 7 Free-Solid-900.otf', File('lib/fonts/Font-Awesome-7-Free-Solid-900.otf'));
   } else {
     print(blue('Custom icons.json found, generating files'));
   }
@@ -135,43 +112,24 @@ void main(List<String> rawArgs) async {
   final Set<String> styles = {};
   // duotone icons are no longer supported
   final List<String> excludedStyles = ['duotone', ...args['exclude']];
-  var hasDuotoneIcons = readAndPickMetadata(
-    iconsJson,
-    metadata,
-    styles,
-    versions,
-    excludedStyles,
-  );
+  var hasDuotoneIcons = readAndPickMetadata(iconsJson, metadata, styles, versions, excludedStyles);
   if (hasDuotoneIcons) {
     // Duotone are no longer supported - temporarily added notice to avoid
     // confusion
-    print(
-      red(
-        'Duotone icons are no longer supported. Automatically disabled them.',
-      ),
-    );
+    print(red('Duotone icons are no longer supported. Automatically disabled them.'));
   }
   hasDuotoneIcons = false;
 
   final highestVersion = calculateFontAwesomeVersion(versions);
 
   print(blue('\nGenerating icon definitions'));
-  writeCodeToFile(
-    () => generateIconDefinitionClass(metadata, highestVersion),
-    'lib/font_awesome_flutter.dart',
-  );
+  writeCodeToFile(() => generateIconDefinitionClass(metadata, highestVersion), 'lib/font_awesome_flutter.dart');
 
   print(blue('\nGenerating example code'));
-  writeCodeToFile(
-    () => generateExamplesListClass(metadata),
-    'example/lib/icons.dart',
-  );
+  writeCodeToFile(() => generateExamplesListClass(metadata), 'example/lib/icons.dart');
 
   if (args['dynamic']) {
-    writeCodeToFile(
-      () => generateIconNameMap(metadata),
-      'lib/name_icon_mapping.dart',
-    );
+    writeCodeToFile(() => generateIconNameMap(metadata), 'lib/name_icon_mapping.dart');
   } else {
     // Remove file if dynamic is not requested. Helps things to stay consistent
     final iconNameMappingFile = File('lib/name_icon_mapping.dart');
@@ -210,9 +168,7 @@ void adjustPubspecFontIncludes(Set<String> styles) {
   var type = 'free'; // 'pro'
   final fontFiles = Directory('lib/fonts').listSync();
 
-  if (fontFiles.any(
-    (file) => file.path.split(Platform.pathSeparator).last.contains('Pro'),
-  )) {
+  if (fontFiles.any((file) => file.path.split(Platform.pathSeparator).last.contains('Pro'))) {
     type = 'pro';
   }
 
@@ -229,11 +185,7 @@ void adjustPubspecFontIncludes(Set<String> styles) {
       final needsReplacement = styleName == 'regular' || styleName == 'solid';
       pubspec[i] = uncommentYamlLine(pubspec[i]);
       pubspec[i + 1] = uncommentYamlLine(pubspec[i + 1]);
-      pubspec[i + 2] = uncommentYamlLine(
-        needsReplacement
-            ? replaceYamlLineByFontAwesomeType(pubspec[i + 2], type)
-            : pubspec[i + 2],
-      );
+      pubspec[i + 2] = uncommentYamlLine(needsReplacement ? replaceYamlLineByFontAwesomeType(pubspec[i + 2], type) : pubspec[i + 2]);
       pubspec[i + 3] = uncommentYamlLine(pubspec[i + 3]);
       enabledStyles.add(styleName);
     } else {
@@ -248,9 +200,7 @@ void adjustPubspecFontIncludes(Set<String> styles) {
   pubspecFile.writeAsStringSync(pubspec.join('\n'));
 
   print(blue('\nFound and enabled the following icon styles:'));
-  enabledStyles.isEmpty
-      ? print(red("None"))
-      : print(blue(enabledStyles.join(', ')));
+  enabledStyles.isEmpty ? print(red("None")) : print(blue(enabledStyles.join(', ')));
 
   print(blue('\nRunning "flutter pub get"'));
   final result = Process.runSync('flutter', ['pub', 'get'], runInShell: true);
@@ -361,6 +311,9 @@ to complete successfully.
     for (var style in icon.styles) {
       iconName = normalizeIconName(icon.name, style, icon.styles.length);
       output.add("'$style ${icon.name}': FontAwesomeIcons.$iconName,");
+      for (var alias in icon.aliases) {
+        output.add("'$style $alias': FontAwesomeIcons.$iconName,");
+      }
     }
   }
 
@@ -370,25 +323,10 @@ to complete successfully.
 }
 
 /// Builds the class with icon definitions and returns the output
-List<String> generateIconDefinitionClass(
-  List<IconMetadata> metadata,
-  Version version,
-) {
-  final List<String> output = [
-    "import 'package:flutter/widgets.dart';",
-    "import 'package:font_awesome_flutter/src/icon_data.dart';",
-    "export 'package:font_awesome_flutter/src/fa_icon.dart';",
-    "export 'package:font_awesome_flutter/src/icon_data.dart';",
-  ];
+List<String> generateIconDefinitionClass(List<IconMetadata> metadata, Version version) {
+  final List<String> output = ["import 'package:flutter/widgets.dart';", "import 'package:font_awesome_flutter/src/icon_data.dart';", "export 'package:font_awesome_flutter/src/fa_icon.dart';", "export 'package:font_awesome_flutter/src/icon_data.dart';"];
 
-  output.addAll([
-    '',
-    '// THIS FILE IS AUTOMATICALLY GENERATED!',
-    '',
-    '/// Icons based on font awesome $version',
-    '@staticIconProvider',
-    'class FontAwesomeIcons {',
-  ]);
+  output.addAll(['', '// THIS FILE IS AUTOMATICALLY GENERATED!', '', '/// Icons based on font awesome $version', '@staticIconProvider', 'class FontAwesomeIcons {']);
 
   for (var icon in metadata) {
     for (String style in icon.styles) {
@@ -404,14 +342,7 @@ List<String> generateIconDefinitionClass(
 
 /// Builds the example icons
 List<String> generateExamplesListClass(List<IconMetadata> metadata) {
-  final List<String> output = [
-    "import 'package:font_awesome_flutter/font_awesome_flutter.dart';",
-    "import 'package:font_awesome_flutter_example/example_icon.dart';",
-    '',
-    '// THIS FILE IS AUTOMATICALLY GENERATED!',
-    '',
-    'final icons = <ExampleIcon>[',
-  ];
+  final List<String> output = ["import 'package:font_awesome_flutter/font_awesome_flutter.dart';", "import 'package:font_awesome_flutter_example/example_icon.dart';", '', '// THIS FILE IS AUTOMATICALLY GENERATED!', '', 'final icons = <ExampleIcon>['];
 
   for (var icon in metadata) {
     for (String style in icon.styles) {
@@ -523,10 +454,7 @@ Future printVersionNotice(String repositoryName) async {
 
     print(blue('Using font_awesome_flutter version $packageVersion'));
 
-    await download(
-      'https://api.github.com/repos/$repositoryName/releases',
-      tmpFile,
-    );
+    await download('https://api.github.com/repos/$repositoryName/releases', tmpFile);
 
     String rawReleasesData = await tmpFile.readAsString();
     List releasesData = json.decode(rawReleasesData);
@@ -536,12 +464,7 @@ Future printVersionNotice(String repositoryName) async {
       var releaseName = release["name"] as String;
       releaseName = releaseName.isEmpty ? release["tag_name"] : releaseName;
       // remove possible prefixes
-      releaseName = releaseName
-          .toLowerCase()
-          .replaceAll('version', '')
-          .replaceAll('v.', '')
-          .replaceAll('v', '')
-          .trim();
+      releaseName = releaseName.toLowerCase().replaceAll('version', '').replaceAll('v.', '').replaceAll('v', '').trim();
       final version = pub.Version.parse(releaseName);
       if (version.isPreRelease) {
         preReleases.add(version);
@@ -554,26 +477,13 @@ Future printVersionNotice(String repositoryName) async {
     final primaryPreRelease = pub.Version.primary(preReleases);
 
     if (primaryRelease > packageVersion) {
-      print(
-        red(
-          'A new version ($primaryRelease) of font_awesome_flutter is available. Please update before reporting any errors. You can update via `git pull` or by downloading the source code from github. (https://github.com/$repositoryName)',
-        ),
-      );
+      print(red('A new version ($primaryRelease) of font_awesome_flutter is available. Please update before reporting any errors. You can update via `git pull` or by downloading the source code from github. (https://github.com/$repositoryName)'));
     }
-    if (primaryPreRelease > packageVersion &&
-        primaryPreRelease > primaryRelease) {
-      print(
-        yellow(
-          'A pre-release version ($primaryPreRelease) of font_awesome_flutter is available. Should you encounter any problems, have a look if it fixes them.',
-        ),
-      );
+    if (primaryPreRelease > packageVersion && primaryPreRelease > primaryRelease) {
+      print(yellow('A pre-release version ($primaryPreRelease) of font_awesome_flutter is available. Should you encounter any problems, have a look if it fixes them.'));
     }
   } catch (_) {
-    print(
-      red(
-        'Error while getting font awesome flutter\'s version information. Could not determine whether you are using the latest version.',
-      ),
-    );
+    print(red('Error while getting font awesome flutter\'s version information. Could not determine whether you are using the latest version.'));
   } finally {
     tmpFile.delete();
   }
@@ -589,13 +499,7 @@ Future printVersionNotice(String repositoryName) async {
 /// latest font awesome version.
 /// [excludedStyles], which can be set in the program arguments, are removed.
 /// Returns whether the dataset contains duotone icons.
-bool readAndPickMetadata(
-  File iconsJson,
-  List<IconMetadata> metadata,
-  Set<String> styles,
-  List<String> versions,
-  List<String> excludedStyles,
-) {
+bool readAndPickMetadata(File iconsJson, List<IconMetadata> metadata, Set<String> styles, List<String> versions, List<String> excludedStyles) {
   var hasDuotoneIcons = false;
 
   dynamic rawMetadata;
@@ -603,9 +507,7 @@ bool readAndPickMetadata(
     final content = iconsJson.readAsStringSync();
     rawMetadata = json.decode(content);
   } catch (_) {
-    print(
-      'Error: Invalid icons.json. Please make sure you copied the correct file.',
-    );
+    print('Error: Invalid icons.json. Please make sure you copied the correct file.');
     exit(1);
   }
 
@@ -624,11 +526,7 @@ bool readAndPickMetadata(
     } else if (icon.containsKey("svgs")) {
       iconStyles.addAll((icon['svgs']['classic'] as Map<String, dynamic>).keys);
       if (icon['svgs']?['sharp'] != null) {
-        iconStyles.addAll(
-          (icon['svgs']['sharp'] as Map<String, dynamic>).keys.map(
-            (key) => 'sharp $key',
-          ),
-        ); //"sharp thin ..."
+        iconStyles.addAll((icon['svgs']['sharp'] as Map<String, dynamic>).keys.map((key) => 'sharp $key')); //"sharp thin ..."
       }
     }
     //TODO: Remove line once duotone support discontinuation notice is removed
@@ -655,16 +553,7 @@ bool readAndPickMetadata(
     final List aliasesRaw = (icon['aliases']?['names'] ?? []);
     final aliases = aliasesRaw.map((e) => e.toString()).toList();
 
-    metadata.add(
-      IconMetadata(
-        iconName,
-        icon['label'],
-        icon['unicode'],
-        searchTerms,
-        iconStyles,
-        aliases,
-      ),
-    );
+    metadata.add(IconMetadata(iconName, icon['label'], icon['unicode'], searchTerms, iconStyles, aliases));
   }
 
   return hasDuotoneIcons;
@@ -698,37 +587,11 @@ Future download(String url, File target) async {
 ArgParser setUpArgParser() {
   final argParser = ArgParser();
 
-  argParser.addFlag(
-    'help',
-    abbr: 'h',
-    defaultsTo: false,
-    negatable: false,
-    help: 'display program options and usage information',
-  );
+  argParser.addFlag('help', abbr: 'h', defaultsTo: false, negatable: false, help: 'display program options and usage information');
 
-  argParser.addMultiOption(
-    'exclude',
-    abbr: 'e',
-    defaultsTo: [],
-    allowed: [
-      'brands',
-      'regular',
-      'solid',
-      'duotone',
-      'light',
-      'thin',
-      'sharp',
-    ],
-    help: 'icon styles which are excluded by the generator',
-  );
+  argParser.addMultiOption('exclude', abbr: 'e', defaultsTo: [], allowed: ['brands', 'regular', 'solid', 'duotone', 'light', 'thin', 'sharp'], help: 'icon styles which are excluded by the generator');
 
-  argParser.addFlag(
-    'dynamic',
-    abbr: 'd',
-    defaultsTo: false,
-    negatable: false,
-    help: 'builds a map, which allows to dynamically retrieve icons by name',
-  );
+  argParser.addFlag('dynamic', abbr: 'd', defaultsTo: false, negatable: false, help: 'builds a map, which allows to dynamically retrieve icons by name');
 
   return argParser;
 }
