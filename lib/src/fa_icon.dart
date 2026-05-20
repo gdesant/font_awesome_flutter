@@ -4,6 +4,8 @@
 
 import 'package:flutter/widgets.dart';
 
+import 'package:font_awesome_flutter/src/icon_data.dart';
+
 /// Creates an Icon Widget that works for non-material Icons, such as the
 /// Font Awesome Icons.
 ///
@@ -21,40 +23,33 @@ import 'package:flutter/widgets.dart';
 /// Original source code:
 /// https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/widgets/icon.dart
 class FaIcon extends Icon {
+  /// The icon to display. The icon can be null, in which case the widget will
+  /// render as an empty space of the specified [size].
+  final FaIconData? _icon;
+
   /// Creates an icon.
-  const FaIcon(
-    super.icon, {
-    super.key,
-    super.size,
-    super.fill,
-    super.weight,
-    super.grade,
-    super.opticalSize,
-    super.color,
-    super.shadows,
-    super.semanticLabel,
-    super.textDirection,
-    super.applyTextScaling,
-    super.blendMode,
-    super.fontWeight,
-  });
+  const FaIcon(FaIconData? icon, {super.key, super.size, super.fill, super.weight, super.grade, super.opticalSize, super.color, super.shadows, super.semanticLabel, super.textDirection, super.applyTextScaling, super.blendMode, super.fontWeight})
+    : _icon = icon,
+      // We pass null to the super constructor because Dart does not allow
+      // accessing properties of a parameter (icon.data) in a const
+      // constructor initializer. We override the 'icon' getter below instead.
+      super(null);
+
+  @override
+  IconData? get icon => _icon?.data;
 
   @override
   Widget build(BuildContext context) {
     assert(this.textDirection != null || debugCheckHasDirectionality(context));
-    final TextDirection textDirection =
-        this.textDirection ?? Directionality.of(context);
+    final TextDirection textDirection = this.textDirection ?? Directionality.of(context);
 
     final IconThemeData iconTheme = IconTheme.of(context);
 
-    final bool applyTextScaling =
-        this.applyTextScaling ?? iconTheme.applyTextScaling ?? false;
+    final bool applyTextScaling = this.applyTextScaling ?? iconTheme.applyTextScaling ?? false;
 
     final double tentativeIconSize = size ?? iconTheme.size ?? kDefaultFontSize;
 
-    final double iconSize = applyTextScaling
-        ? MediaQuery.textScalerOf(context).scale(tentativeIconSize)
-        : tentativeIconSize;
+    final double iconSize = applyTextScaling ? MediaQuery.textScalerOf(context).scale(tentativeIconSize) : tentativeIconSize;
 
     final double? iconFill = fill ?? iconTheme.fill;
 
@@ -66,7 +61,7 @@ class FaIcon extends Icon {
 
     final List<Shadow>? iconShadows = shadows ?? iconTheme.shadows;
 
-    final IconData? icon = this.icon;
+    final IconData? icon = _icon?.data;
     if (icon == null) {
       return Semantics(
         label: semanticLabel,
@@ -103,31 +98,21 @@ class FaIcon extends Icon {
       package: icon.fontPackage,
       fontFamilyFallback: icon.fontFamilyFallback,
       shadows: iconShadows,
-      height:
-          1.0, // Makes sure the font's body is vertically centered within the iconSize x iconSize square.
+      height: 1.0, // Makes sure the font's body is vertically centered within the iconSize x iconSize square.
       leadingDistribution: TextLeadingDistribution.even,
       foreground: foreground,
     );
 
     Widget iconWidget = RichText(
       overflow: TextOverflow.visible, // Never clip.
-      textDirection:
-          textDirection, // Since we already fetched it for the assert...
-      text: TextSpan(
-        text: String.fromCharCode(icon.codePoint),
-        style: fontStyle,
-      ),
+      textDirection: textDirection, // Since we already fetched it for the assert...
+      text: TextSpan(text: String.fromCharCode(icon.codePoint), style: fontStyle),
     );
 
     if (icon.matchTextDirection) {
       switch (textDirection) {
         case TextDirection.rtl:
-          iconWidget = Transform(
-            transform: Matrix4.identity()..scaleByDouble(-1.0, 1.0, 1.0, 1),
-            alignment: Alignment.center,
-            transformHitTests: false,
-            child: iconWidget,
-          );
+          iconWidget = Transform(transform: Matrix4.identity()..scaleByDouble(-1.0, 1.0, 1.0, 1), alignment: Alignment.center, transformHitTests: false, child: iconWidget);
         case TextDirection.ltr:
           break;
       }
